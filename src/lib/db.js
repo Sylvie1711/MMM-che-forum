@@ -4,19 +4,67 @@ import path from 'path';
 const DATA_DIR = path.join(process.cwd(), 'data');
 const POSTS_FILE = path.join(DATA_DIR, 'posts.json');
 
-// Initialize the data directory and files if they don't exist
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Check if running in production (Vercel) environment
+const isProduction = process.env.NODE_ENV === 'production';
+
+// In-memory data store for production
+let inMemoryData = {
+  posts: []
+};
+
+// Initialize the data directory and files if they don't exist and we're not in production
+if (!isProduction) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
+    if (!fs.existsSync(POSTS_FILE)) {
+      fs.writeFileSync(POSTS_FILE, JSON.stringify({ posts: [] }));
+    } else {
+      // Load initial data into memory
+      const fileData = fs.readFileSync(POSTS_FILE, 'utf8');
+      inMemoryData = JSON.parse(fileData);
+    }
+  } catch (error) {
+    console.error('Error initializing data files:', error);
+  }
 }
 
-if (!fs.existsSync(POSTS_FILE)) {
-  fs.writeFileSync(POSTS_FILE, JSON.stringify({ posts: [] }));
-}
+// Helper function to get data (either from file or memory)
+const getData = () => {
+  if (isProduction) {
+    return inMemoryData;
+  }
+  
+  try {
+    return JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
+  } catch (error) {
+    console.error('Error reading data:', error);
+    return { posts: [] };
+  }
+};
+
+// Helper function to save data (either to file or memory)
+const saveData = (data) => {
+  if (isProduction) {
+    inMemoryData = data;
+    return true;
+  }
+  
+  try {
+    fs.writeFileSync(POSTS_FILE, JSON.stringify(data, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error writing data:', error);
+    return false;
+  }
+};
 
 // Function to read all posts
 export async function getPosts({ category = null, limit = 10, page = 1 } = {}) {
   try {
-    const data = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
+    const data = getData();
     let filteredPosts = [...data.posts];
     
     // Apply category filter if provided
@@ -50,7 +98,7 @@ export async function getPosts({ category = null, limit = 10, page = 1 } = {}) {
 // Function to get a single post by ID
 export async function getPostById(id) {
   try {
-    const data = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
+    const data = getData();
     return data.posts.find(post => post._id === id) || null;
   } catch (error) {
     console.error('Error reading post:', error);
@@ -61,7 +109,7 @@ export async function getPostById(id) {
 // Function to create a new post
 export async function createPost(postData) {
   try {
-    const data = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
+    const data = getData();
     
     // Create a new post with a unique ID
     const newPost = {
@@ -79,7 +127,13 @@ export async function createPost(postData) {
     data.posts.push(newPost);
     
     // Save the updated data
-    fs.writeFileSync(POSTS_FILE, JSON.stringify(data, null, 2));
+    const saved = saveData(data);
+    
+    if (!saved && isProduction) {
+      console.log("Post saved in memory but not persisted (expected in production)");
+    } else if (!saved) {
+      return { success: false, error: 'Failed to save post data' };
+    }
     
     return { success: true, post: newPost };
   } catch (error) {
@@ -91,7 +145,7 @@ export async function createPost(postData) {
 // Function to add a comment to a post
 export async function addComment(postId, commentData) {
   try {
-    const data = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
+    const data = getData();
     const postIndex = data.posts.findIndex(post => post._id === postId);
     
     if (postIndex === -1) {
@@ -111,7 +165,13 @@ export async function addComment(postId, commentData) {
     data.posts[postIndex].updatedAt = new Date().toISOString();
     
     // Save the updated data
-    fs.writeFileSync(POSTS_FILE, JSON.stringify(data, null, 2));
+    const saved = saveData(data);
+    
+    if (!saved && isProduction) {
+      console.log("Comment saved in memory but not persisted (expected in production)");
+    } else if (!saved) {
+      return { success: false, error: 'Failed to save comment data' };
+    }
     
     return { success: true, comment: newComment };
   } catch (error) {
@@ -123,7 +183,7 @@ export async function addComment(postId, commentData) {
 // Function to increment post views
 export async function incrementViews(postId) {
   try {
-    const data = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
+    const data = getData();
     const postIndex = data.posts.findIndex(post => post._id === postId);
     
     if (postIndex === -1) {
@@ -134,7 +194,13 @@ export async function incrementViews(postId) {
     data.posts[postIndex].views += 1;
     
     // Save the updated data
-    fs.writeFileSync(POSTS_FILE, JSON.stringify(data, null, 2));
+    const saved = saveData(data);
+    
+    if (!saved && isProduction) {
+      console.log("Views incremented in memory but not persisted (expected in production)");
+    } else if (!saved) {
+      return { success: false, error: 'Failed to update views' };
+    }
     
     return { success: true, views: data.posts[postIndex].views };
   } catch (error) {
