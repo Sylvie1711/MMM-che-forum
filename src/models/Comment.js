@@ -6,10 +6,11 @@ const CommentSchema = new mongoose.Schema({
     required: [true, 'Please provide content'],
     trim: true
   },
-  author: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  authorName: {
+    type: String,
+    required: [true, 'Please provide author name'],
+    trim: true,
+    maxLength: 50
   },
   post: {
     type: mongoose.Schema.Types.ObjectId,

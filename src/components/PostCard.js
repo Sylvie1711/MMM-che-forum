@@ -29,13 +29,8 @@ export default function PostCard({ post }) {
         
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <img
-              src={post.author.avatar || '/default-avatar.png'}
-              alt={post.author.username}
-              className="w-8 h-8 rounded-full mr-2"
-            />
             <span className="text-sm font-medium text-gray-700">
-              {post.author.username}
+              {post.authorName}
             </span>
           </div>
           
