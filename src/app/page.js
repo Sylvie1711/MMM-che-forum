@@ -1,101 +1,218 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
+import Layout from '@/components/Layout';
 
 export default function Home() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [category, setCategory] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    pages: 0
+  });
+  
+  const categories = [
+    'General',
+    'Technology',
+    'Sports',
+    'events',
+    'lafda/tension',
+    'Exams/Notes',
+    'Notice/Updates',
+    'Masti/Tea',
+    'Other'
+  ];
+  
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setLoading(true);
+        
+        let url = `/api/posts?page=${page}&limit=10`;
+        if (category) {
+          url += `&category=${category}`;
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load posts');
+        }
+        
+        setPosts(data.posts);
+        setPagination(data.pagination);
+      } catch (error) {
+        console.error('Error loading posts:', error);
+        setError('Failed to load posts. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPosts();
+  }, [category, page]);
+  
+  const handleCategoryChange = (newCategory) => {
+    setCategory(newCategory);
+    setPage(1);
+  };
+  
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+  
+  const handleNextPage = () => {
+    if (page < pagination.pages) {
+      setPage(page + 1);
+    }
+  };
+  
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <Layout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">
+            {category ? `${category} Posts` : 'Recent Posts'}
+          </h1>
+          
+          <div className="flex space-x-2 overflow-x-auto pb-2 md:pb-0">
+            <button
+              onClick={() => handleCategoryChange('')}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${
+                category === '' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              All
+            </button>
+            
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  category === cat ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading posts...</p>
+            </div>
+          </div>
+        ) : posts.length > 0 ? (
+          <>
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <div
+                  key={post._id}
+                  className={`bg-white rounded-lg shadow-md overflow-hidden ${
+                    post.isSticky ? 'border-l-4 border-blue-500' : ''
+                  }`}
+                >
+                  <div className="p-6">
+                    <Link href={`/post/${post._id}`}>
+                      <h2 className="text-xl font-bold text-gray-900 hover:text-blue-600 mb-2">
+                        {post.title}
+                        {post.isSticky && (
+                          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                            Pinned
+                          </span>
+                        )}
+                      </h2>
+                    </Link>
+                    
+                    <div className="flex items-center text-gray-500 text-sm mb-4">
+                      <span className="mr-4">Posted by {post.authorName}</span>
+                      <span className="mr-4">
+                        {post.createdAt && formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                      </span>
+                      <span className="mr-4">
+                        <Link href={`/?category=${post.category}`} className="hover:text-blue-600">
+                          {post.category}
+                        </Link>
+                      </span>
+                      <span>{post.views} views</span>
+                      <span className="mx-4">•</span>
+                      <span>{post.comments?.length || 0} comments</span>
+                    </div>
+                    
+                    <p className="text-gray-700 mb-4 line-clamp-3">{post.content}</p>
+                    
+                    <Link
+                      href={`/post/${post._id}`}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Read more →
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {pagination.pages > 1 && (
+              <div className="flex justify-center mt-8">
+                <nav className="inline-flex rounded-md shadow">
+                  <button
+                    onClick={handlePrevPage}
+                    disabled={page === 1}
+                    className={`px-4 py-2 rounded-l-md border ${
+                      page === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  <div className="px-4 py-2 border-t border-b bg-white text-blue-600">
+                    Page {page} of {pagination.pages}
+                  </div>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={page === pagination.pages}
+                    className={`px-4 py-2 rounded-r-md border ${
+                      page === pagination.pages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <p className="text-gray-500 mb-4">No posts found in this category.</p>
+            <Link href="/new-post" className="text-blue-600 hover:text-blue-800 font-medium">
+              Create the first post →
+            </Link>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
-}
+} 

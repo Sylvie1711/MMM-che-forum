@@ -1,0 +1,37 @@
+{
+  "posts": [
+    {
+      "_id": "1709818800000",
+      "title": "Welcome to the CHE MMMUT Forum",
+      "content": "Welcome to the Chemical Engineering Department forum for MMMUT. This is a place to discuss courses, projects, and share ideas related to chemical engineering. Feel free to post questions and contribute to our community discussions!",
+      "authorName": "Admin",
+      "category": "General",
+      "comments": [],
+      "views": 4,
+      "isSticky": true,
+      "isLocked": false,
+      "createdAt": "2024-03-07T12:00:00.000Z",
+      "updatedAt": "2024-03-07T12:00:00.000Z"
+    },
+    {
+      "_id": "1741341049927",
+      "title": "sss",
+      "content": "sss",
+      "category": "lafda/tension",
+      "authorName": "sss",
+      "comments": [
+        {
+          "_id": "1741341276822",
+          "content": "ss",
+          "authorName": "ss",
+          "createdAt": "2025-03-07T09:54:36.822Z"
+        }
+      ],
+      "views": 7,
+      "isSticky": false,
+      "isLocked": false,
+      "createdAt": "2025-03-07T09:50:49.927Z",
+      "updatedAt": "2025-03-07T09:54:36.822Z"
+    }
+  ]
+}
