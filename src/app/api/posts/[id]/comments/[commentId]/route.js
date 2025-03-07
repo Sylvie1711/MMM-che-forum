@@ -1,21 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
 import connectDB from '@/lib/db';
 import Comment from '@/models/Comment';
-import { authOptions } from '../../../../auth/[...nextauth]/route';
+import Post from '@/models/Post';
 
 // Update a comment
 export async function PUT(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
     await connectDB();
     
     const comment = await Comment.findById(params.commentId);
@@ -27,28 +17,19 @@ export async function PUT(request, { params }) {
       );
     }
     
-    // Check if user is the author
-    if (comment.author.toString() !== session.user.id && !session.user.isAdmin) {
-      return NextResponse.json(
-        { message: 'Not authorized to update this comment' },
-        { status: 403 }
-      );
-    }
+    const { content, authorName } = await request.json();
     
-    const { content } = await request.json();
-    
-    if (!content) {
+    if (!content || !authorName) {
       return NextResponse.json(
-        { message: 'Please provide comment content' },
+        { message: 'Please provide comment content and author name' },
         { status: 400 }
       );
     }
     
     comment.content = content;
+    comment.authorName = authorName;
     comment.isEdited = true;
     await comment.save();
-    
-    await comment.populate('author', 'username avatar');
     
     return NextResponse.json({
       message: 'Comment updated successfully',
@@ -66,15 +47,6 @@ export async function PUT(request, { params }) {
 // Delete a comment
 export async function DELETE(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
     await connectDB();
     
     const comment = await Comment.findById(params.commentId);
@@ -83,14 +55,6 @@ export async function DELETE(request, { params }) {
       return NextResponse.json(
         { message: 'Comment not found' },
         { status: 404 }
-      );
-    }
-    
-    // Check if user is the author or admin
-    if (comment.author.toString() !== session.user.id && !session.user.isAdmin) {
-      return NextResponse.json(
-        { message: 'Not authorized to delete this comment' },
-        { status: 403 }
       );
     }
     

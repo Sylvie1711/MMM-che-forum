@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
 import connectDB from '@/lib/db';
 import Post from '@/models/Post';
 import Comment from '@/models/Comment';
-import { authOptions } from '../../../auth/[...nextauth]/route';
 
 // Get comments for a post
 export async function GET(request, { params }) {
@@ -11,7 +9,6 @@ export async function GET(request, { params }) {
     await connectDB();
     
     const comments = await Comment.find({ post: params.id })
-      .populate('author', 'username avatar')
       .sort({ createdAt: -1 })
       .lean();
     
@@ -28,20 +25,11 @@ export async function GET(request, { params }) {
 // Create a new comment
 export async function POST(request, { params }) {
   try {
-    const session = await getServerSession(authOptions);
+    const { content, authorName, parentComment } = await request.json();
     
-    if (!session) {
+    if (!content || !authorName) {
       return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    const { content, parentComment } = await request.json();
-    
-    if (!content) {
-      return NextResponse.json(
-        { message: 'Please provide comment content' },
+        { message: 'Please provide comment content and author name' },
         { status: 400 }
       );
     }
@@ -60,7 +48,7 @@ export async function POST(request, { params }) {
     // Create comment
     const comment = await Comment.create({
       content,
-      author: session.user.id,
+      authorName,
       post: params.id,
       parentComment: parentComment || null
     });
@@ -69,9 +57,6 @@ export async function POST(request, { params }) {
     await Post.findByIdAndUpdate(params.id, {
       $push: { comments: comment._id }
     });
-    
-    // Populate author details
-    await comment.populate('author', 'username avatar');
     
     return NextResponse.json(
       { message: 'Comment created successfully', comment },
